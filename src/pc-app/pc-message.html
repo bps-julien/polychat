@@ -1,0 +1,199 @@
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../bower_components/iron-ajax/iron-ajax.html">
+
+<dom-module id="pc-message">
+  <template>
+
+    <style>
+      :host {
+        display: block;
+      }
+
+      .message-container {
+        padding: 16px;
+      }
+      .message-container[mine] {
+        text-align: right;
+      }
+
+      .message {
+        display: inline-block;
+        text-align: left;
+        max-width: 40%;
+        position: relative;
+        padding-left: 56px;
+        box-sizing: border-box;
+      }
+      [mine] .message {
+        padding-left: 0;
+        padding-right: 56px;
+      }
+
+      .message .message-content {
+        background: #fff;
+        border-radius: 5px;
+        padding: 8px;
+        min-width: 234px;
+        word-break: break-word;
+      }
+
+      .message .message-content img {
+        max-width: 100%;
+        display: block;
+      }
+
+      .message .message-content .error {
+        font-style: italic;
+        color: #f32;
+        font-size: 12px;
+      }
+
+      .message .message-content .info i {
+        float: right;
+        font-size: 11px;
+      }
+
+      .message .avatar {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background-repeat: no-repeat;
+        background-position: center;
+        background-size: cover;
+        background-color: #fff;
+      }
+      [mine] .message .avatar {
+        left: auto;
+        right: 0;
+      }
+
+      #loader {
+        display: none;
+      }
+
+      @media all and (max-width: 1024px) {
+        .message {
+          max-width: 60%;
+        }
+      }
+
+      @media all and (max-width: 560px) {
+        .message {
+          max-width: 80%;
+        }
+      }
+
+      @media all and (max-width: 430px) {
+        .message {
+          max-width: 100%;
+        }
+        .message .message-content {
+          min-width: 180px;
+        }
+      }
+
+    </style>
+
+    <div id="loader">
+      <template is="dom-repeat" items=[[links]] on-dom-change="_imagesChanged">
+        <img src="[[item]]" on-load="_checkSource">
+      </template>
+    </div>
+
+    <div class="message-container" mine$="[[_eq(message.uid, uid)]]">
+      <div class="message">
+        <div class="message-content">
+          <div class="info"><b>[[message.username]]</b><i>[[_formatDate(message.timestamp)]]</i></div>
+          <div class="text" id="content"></div>
+          <div id="images">
+            <template is="dom-repeat" items=[[images]]>
+              <a href$="[[item]]" target="_blank"><img src="[[item]]"></a>
+            </template>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </template>
+
+  <script>
+    /**
+     * @customElement
+     * @polymer
+     */
+    class PcMessage extends Polymer.Element {
+
+      static get is() { return 'pc-message'; }
+
+      static get properties() {
+        return {
+          message: {
+            type: Object,
+            observer: '_contentChanged'
+          },
+          uid: {
+            type: Object
+          },
+          images: {
+            type: Array,
+            value: () => []
+          },
+          links: Array
+        };
+      }
+
+      constructor(){
+        super();
+      }
+
+      _contentChanged(message){
+        this.$.content.innerHTML = this._generateLinks(message.message);
+      }
+
+      _checkSource(e){
+        const target = e.tagName ? e : e.currentTarget;
+        const src = target.src;
+        this.push('images', src);
+      }
+
+      _imagesChanged(e) {
+        this.$.loader.querySelectorAll('img').forEach(image => image.complete && this._checkSource(image));
+      }
+
+      _generateLinks(text) {
+        const exp = /(\b((https?|ftp|file):\/\/|(www))[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|]*)/ig;
+        this.links = text.match(exp);
+        return text.replace(exp, "<a href='$1' target='_blank'>$1</a>");
+      }
+
+      _imageLoaded(){
+        this.dispatchEvent(new CustomEvent('image-load'));
+      }
+
+      _formatDate(date){
+        const d = new Date(date);
+        const day = d.getDate();
+        const month = d.getMonth() + 1;
+        const year = d.getYear();
+        const cd = new Date(date);
+        const cday = cd.getDate();
+        const cmonth = cd.getMonth() + 1;
+        const cyear = cd.getYear();
+        const hours = d.getHours();
+        const mins = d.getMinutes();
+        if(day === cday && month === cmonth && year === cyear) return (hours < 10 ? '0' + hours : hours) + ':' + (mins < 10 ? '0' + mins : mins);
+        else return (day < 10 ? '0' + day : day) + '/' + (month < 10 ? '0' + month : month);
+      }
+
+      _eq(a, b){
+        return a === b;
+      }
+
+    }
+
+    window.customElements.define(PcMessage.is, PcMessage);
+  </script>
+</dom-module>

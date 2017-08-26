@@ -1,0 +1,6 @@
+{
+  "name": "polychat",
+  "short_name": "polychat",
+  "start_url": "/",
+  "display": "standalone"
+}
