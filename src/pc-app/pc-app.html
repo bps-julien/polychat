@@ -82,8 +82,7 @@
        url="https://polychat-4cf47.firebaseio.com/messages.json"
        method="POST"
        handle-as="json"
-       content-type="application/json"
-       on-response="_messagePosted"></iron-ajax>
+       content-type="application/json"></iron-ajax>
 
     <main id="main">
       
@@ -98,7 +97,7 @@
       </header>
       <div id="messages">
         <template is="dom-repeat" items="[[messages]]" as="message" on-dom-change="_doScroll">
-          <pc-message on-image-load="_doScroll" uid="[[uid]]" message="[[message]]"></pc-message>
+          <pc-message on-image-load="_doScroll" user="[[user]]" message="[[message]]"></pc-message>
         </template>
       </div>
       <div id="chatbox">
@@ -111,10 +110,6 @@
   </template>
 
   <script>
-    /**
-     * @customElement
-     * @polymer
-     */
     class PcApp extends Polymer.Element {
 
       static get is() { return 'pc-app'; }
@@ -137,8 +132,17 @@
             reflectToAttribute: true,
             value: false
           },
-          username: String,
-          uid: String,
+          user: {
+            type: Object,
+            value: () => {
+              if(window.localStorage) {
+                const user = localStorage.getItem('user');
+                if(user) return JSON.parse(user);
+              }
+              return false;
+            },
+            observer: '_userChanged'
+          }
         };
       }
 
@@ -147,19 +151,27 @@
         this.$messages = this.$.messages;
         this.$messager = this.shadowRoot.querySelector('#messager');
         this.$messages.addEventListener('scroll', this._willScroll.bind(this), { passive: true });
-        this._resizeChatbox();
-        this.messages = window.localStorage && window.localStorage.messages ? JSON.parse(window.localStorage.messages) : [];
+        this.messages = window.localStorage && localStorage.messages ? JSON.parse(localStorage.messages) : [];
         this.params.startAt = `\"${this._getLastKey()}\"`;
-        this.$.getter.generateRequest()
+        this._resizeChatbox();
+        this.$.getter.generateRequest();
+        setTimeout(() => this._doScroll(true), 100);
       }
 
       _setUsername(e) {
         const name = e.currentTarget.parentNode.value;
         if(name){
-          this.username = e.currentTarget.parentNode.value;
-          this.uid = Math.random().toString(36).slice(2);
-          this.connected = true;
+          this.user = {
+            username: e.currentTarget.parentNode.value,
+            uid: Math.random().toString(36).slice(2),
+            connected_at: Date.now()
+          };
+          if(window.localStorage) localStorage.setItem('user', JSON.stringify(this.user));
         }
+      }
+
+      _userChanged(user) {
+        this.connected = user ? true : false;
       }
 
       _getMessages() {
@@ -183,7 +195,7 @@
           if(window.localStorage) window.localStorage.removeItem('messages');
           this.messages = [];
         }
-        this._resizeChatbox();
+        this._doScroll();
         this._getMessages();
       }
 
@@ -191,19 +203,23 @@
         return this.messages.length ? this.messages[this.messages.length - 1].key : "";
       }
 
-      _scrollChanged(e){
-        if(e.currentTarget.scrollTop === 0 && this.messages.length === this.offset){
-          this.offset = this.offset + this.limit;
+      _sendMessage(e) {
+        if(!this.user || !this.$messager.value.replace(/(\t|\n|\r| )/g, '').length) return;
+        this.$.setter.body = {
+          user: this.user,
+          message: this.$messager.value,
+          timestamp: Date.now()
         }
-        this.scrolled = true;
+        this.$.setter.generateRequest();
+        this.$messager.value = "";
       }
 
-      _doScroll(){
-        if(this.autoScroll && this.$messages) this.$messages.scrollTop = this.$messages.scrollHeight;
+      _doScroll(force){
+        if((force === true || this.autoScroll) && this.$messages) setTimeout(_ => this.$messages.scrollTop = this.$messages.scrollHeight, force && force.type === "load" ? 100 : 0);
       }
 
       _willScroll(){
-        this.autoScroll = this.$messages && this.$messages.scrollHeight - this.$messages.scrollTop - this.$messages.clientHeight === 0;
+        this.autoScroll = this.$messages && this.$messages.scrollHeight - this.$messages.scrollTop - this.$messages.clientHeight <= 100;
       }
 
       _onSend(e){
@@ -213,18 +229,6 @@
         }
       }
 
-      _sendMessage(e) {
-        if(!this.$messager.value.replace(/(\t|\n|\r| )/g, '').length) return;
-        this.$.setter.body = {
-          uid: this.uid,
-          username: this.username,
-          message: this.$messager.value,
-          timestamp: Date.now()
-        }
-        this.$.setter.generateRequest();
-        this.$messager.value = "";
-      }
-
       _resizeChatbox(e){
         if(!this.$messages || !this.$messager) return;
         this.$messages.style.height = (this.$.main.clientHeight - this.$messages.offsetTop - this.$messager.clientHeight) + 'px';
@@ -232,6 +236,7 @@
           const key = e.which || e.keyCode;
           if(key === 13 && !e.shiftKey) this._sendMessage();
         }
+        this._doScroll();
       }
 
     }

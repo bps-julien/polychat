@@ -12,7 +12,7 @@
       .message-container {
         padding: 16px;
       }
-      .message-container[mine] {
+      :host([mine]) .message-container {
         text-align: right;
       }
 
@@ -24,7 +24,7 @@
         padding-left: 56px;
         box-sizing: border-box;
       }
-      [mine] .message {
+      :host([mine]) .message {
         padding-left: 0;
         padding-right: 56px;
       }
@@ -65,7 +65,7 @@
         background-size: cover;
         background-color: #fff;
       }
-      [mine] .message .avatar {
+      :host([mine]) .message .avatar {
         left: auto;
         right: 0;
       }
@@ -103,14 +103,14 @@
       </template>
     </div>
 
-    <div class="message-container" mine$="[[_eq(message.uid, uid)]]">
+    <div class="message-container">
       <div class="message">
         <div class="message-content">
-          <div class="info"><b>[[message.username]]</b><i>[[_formatDate(message.timestamp)]]</i></div>
+          <div class="info"><b>[[message.user.username]]</b><i>[[_formatDate(message.timestamp)]]</i></div>
           <div class="text" id="content"></div>
           <div id="images">
             <template is="dom-repeat" items=[[images]]>
-              <a href$="[[item]]" target="_blank"><img src="[[item]]"></a>
+              <a href$="[[item]]" target="_blank"><img src="[[item]]" on-load="_imageLoaded"></a>
             </template>
           </div>
         </div>
@@ -120,10 +120,6 @@
   </template>
 
   <script>
-    /**
-     * @customElement
-     * @polymer
-     */
     class PcMessage extends Polymer.Element {
 
       static get is() { return 'pc-message'; }
@@ -134,19 +130,28 @@
             type: Object,
             observer: '_contentChanged'
           },
-          uid: {
-            type: Object
-          },
           images: {
             type: Array,
             value: () => []
           },
+          mine: {
+            type: Boolean,
+            value: false,
+            reflectToAttribute: true
+          },
+          user: Object,
           links: Array
         };
       }
 
-      constructor(){
-        super();
+      static get observers() {
+        return [
+          '_attachMessage(user.uid, message.user.uid)'
+        ]
+      }
+
+      _attachMessage(uid, muid){
+        this.mine = uid === muid;
       }
 
       _contentChanged(message){
@@ -156,7 +161,7 @@
       _checkSource(e){
         const target = e.tagName ? e : e.currentTarget;
         const src = target.src;
-        this.push('images', src);
+        if(this.images.indexOf(src) === -1) this.push('images', src);
       }
 
       _imagesChanged(e) {
