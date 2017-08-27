@@ -3,5 +3,30 @@
     "rules": [
       "polymer-2"
     ]
-  }
+  },
+  "entrypoint": "index.html",
+  "shell": "src/pc-app/pc-app.html",
+  "sources": [
+    "bower.json",
+    "src/pc-app/*"
+  ],
+  "extraDependencies": [
+    "manifest.json"
+  ],
+  "builds": [
+    {
+      "addServiceWorker": true,
+      "html": {
+        "minify": true
+      },
+      "css": {
+        "minify": true
+      },
+      "js": {
+        "minify": true,
+        "compile": true
+      },
+      "bundle": true
+    }
+  ]
 }

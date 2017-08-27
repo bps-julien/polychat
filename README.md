@@ -232,6 +232,43 @@ Let's not forget to import our new element into our app!
 
 ### Congratulations! You have created your first Polymer app!
 Feel free to add more features to your code like a simple login for your users.
+Once your app ready, you can build it using the `polymer build` command. More info about how to configure the build process: https://www.polymer-project.org/2.0/docs/tools/polymer-json.
+Here is a basic polymer.json file:
+
+```json
+{
+  "lint": {
+    "rules": [
+      "polymer-2"
+    ]
+  },
+  "entrypoint": "index.html",
+  "shell": "src/pc-app/pc-app.html",
+  "sources": [
+    "bower.json",
+    "src/pc-app/*"
+  ],
+  "extraDependencies": [
+    "manifest.json"
+  ],
+  "builds": [
+    {
+      "addServiceWorker": true,
+      "html": {
+        "minify": true
+      },
+      "css": {
+        "minify": true
+      },
+      "js": {
+        "minify": true,
+        "compile": true
+      },
+      "bundle": true
+    }
+  ]
+}
+```
 
 ## Thank you all!
 
