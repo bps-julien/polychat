@@ -270,6 +270,24 @@ Here is a basic polymer.json file:
 }
 ```
 
+You'll also need to configure your service worker using the `sw-precache-config.js` file. More info about this here: https://github.com/GoogleChrome/sw-precache.
+Here is a very basic configuration:
+
+```js
+module.exports = {
+    staticFileGlobs: [
+        '/index.html',
+        '/manifest.json',
+        '/bower_components/webcomponentsjs/*',
+        '/src/**/*'
+    ],
+    navigateFallback: 'index.html',
+    navigateFallbackWhitelist: [/^(?!.*\.html$|\/data\/.*)/]
+}
+```
+
+You should now be able to build your PWA-ready Polymer project!
+
 ## Thank you all!
 
 ##### [@BPS_Julien](https://twitter.com/BPS_Julien)
