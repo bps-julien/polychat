@@ -155,8 +155,6 @@ _sendMessage(e) {
     if(!this.$messager.value.replace(/(\t|\n|\r| )/g, '').length) return;
     // Targets my setter based on its ID and sends the request
     this.$.setter.body = {
-        uid: this.uid,
-        username: this.username,
         message: this.$messager.value,
         timestamp: Date.now()
     }
